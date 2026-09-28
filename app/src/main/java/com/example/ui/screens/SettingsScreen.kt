@@ -1,6 +1,5 @@
 package com.example.ui.screens
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -22,16 +21,15 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Functions
-import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Psychology
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.School
-import androidx.compose.material.icons.outlined.WorkspacePremium
+import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -59,13 +57,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.R
 import com.example.data.model.TutorMode
 import com.example.ui.theme.AppWhite
 import com.example.ui.theme.LightGrayBorder
@@ -85,7 +81,6 @@ fun SettingsScreen(
     modifier: Modifier = Modifier
 ) {
     val userName by viewModel.userName.collectAsState()
-    val isPro by viewModel.isPro.collectAsState()
     val questionsToday by viewModel.questionsUsedToday.collectAsState()
     val allProblems by viewModel.allProblems.collectAsState()
     val currentMode by viewModel.currentTutorMode.collectAsState()
@@ -95,6 +90,9 @@ fun SettingsScreen(
     var showResetDialog by remember { mutableStateOf(false) }
     var showClearHistoryDialog by remember { mutableStateOf(false) }
     var showFormulasToggle by remember { mutableStateOf(true) }
+
+    // Remaining limit calculation: total limit = 5; remaining = (5 - questionsToday).coerceAtLeast(0)
+    val remainingToday = (5 - questionsToday).coerceAtLeast(0)
 
     Scaffold(
         modifier = modifier
@@ -130,7 +128,7 @@ fun SettingsScreen(
             contentPadding = androidx.compose.foundation.layout.PaddingValues(top = 8.dp, bottom = 110.dp),
             verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
-            // 1. RICH USER PROFILE HERO CARD
+            // 1. PROFILE CARD: NO USER PHOTO, NO "PRO/FREE" BADGE IN FRONT OF NAME
             item {
                 Surface(
                     modifier = Modifier
@@ -150,15 +148,21 @@ fun SettingsScreen(
                         modifier = Modifier.padding(18.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.user_avatar_1790595505701),
-                            contentDescription = "User profile",
-                            contentScale = ContentScale.Crop,
+                        // Clean geometric profile icon (no image)
+                        Box(
                             modifier = Modifier
-                                .size(56.dp)
-                                .clip(CircleShape)
-                                .border(2.dp, NumeriqBrandGreen, CircleShape)
-                        )
+                                .size(50.dp)
+                                .background(NumeriqGreenBoxBg, CircleShape)
+                                .border(1.5.dp, NumeriqBrandGreen, CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Person,
+                                contentDescription = "Profile",
+                                tint = NumeriqGreenDarkText,
+                                modifier = Modifier.size(26.dp)
+                            )
+                        }
 
                         Spacer(modifier = Modifier.width(14.dp))
 
@@ -180,48 +184,32 @@ fun SettingsScreen(
                                     modifier = Modifier.size(15.dp)
                                 )
                             }
-                            Spacer(modifier = Modifier.height(4.dp))
+                            Spacer(modifier = Modifier.height(3.dp))
                             Text(
                                 text = "Personal Math Study Account",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = TextMuted
                             )
                         }
-
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = NumeriqBrandGreen,
-                            modifier = Modifier.padding(start = 4.dp)
-                        ) {
-                            Text(
-                                text = if (isPro) "PRO" else "FREE",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = FontWeight.ExtraBold,
-                                    fontSize = 11.sp
-                                ),
-                                color = TextDark,
-                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp)
-                            )
-                        }
                     }
                 }
             }
 
-            // 2. LEARNING METRICS GRID
+            // 2. 3 TOP BOXES: ALL 3 GREEN (NO GRAY), SOLVED COUNT, REMAINING TODAY, SELECTED MODEL
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    // Solved Count
+                    // Box 1: Total Problems Solved
                     Surface(
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(18.dp),
-                        color = LightGraySurface,
-                        border = androidx.compose.foundation.BorderStroke(1.dp, LightGrayBorder)
+                        color = NumeriqGreenBoxBg,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, NumeriqBrandGreen)
                     ) {
                         Column(
-                            modifier = Modifier.padding(14.dp),
+                            modifier = Modifier.padding(vertical = 16.dp, horizontal = 8.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
@@ -230,46 +218,21 @@ fun SettingsScreen(
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 22.sp
                                 ),
-                                color = TextDark
+                                color = NumeriqGreenDarkText
                             )
-                            Spacer(modifier = Modifier.height(2.dp))
+                            Spacer(modifier = Modifier.height(3.dp))
                             Text(
                                 text = "Solved",
-                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                                color = TextMuted
-                            )
-                        }
-                    }
-
-                    // Today's Usage
-                    Surface(
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(18.dp),
-                        color = LightGraySurface,
-                        border = androidx.compose.foundation.BorderStroke(1.dp, LightGrayBorder)
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(14.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(
-                                text = if (isPro) "∞" else "$questionsToday/5",
-                                style = MaterialTheme.typography.titleLarge.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 22.sp
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold
                                 ),
                                 color = TextDark
                             )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = "Used Today",
-                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                                color = TextMuted
-                            )
                         }
                     }
 
-                    // Active Tutor
+                    // Box 2 (Center): Today Limit Remaining (total 5, subtract used)
                     Surface(
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(18.dp),
@@ -277,31 +240,65 @@ fun SettingsScreen(
                         border = androidx.compose.foundation.BorderStroke(1.dp, NumeriqBrandGreen)
                     ) {
                         Column(
-                            modifier = Modifier.padding(14.dp),
+                            modifier = Modifier.padding(vertical = 16.dp, horizontal = 8.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Psychology,
-                                contentDescription = null,
-                                tint = NumeriqGreenDarkText,
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = currentMode.title,
-                                style = MaterialTheme.typography.bodySmall.copy(
+                                text = "$remainingToday",
+                                style = MaterialTheme.typography.titleLarge.copy(
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 11.sp
+                                    fontSize = 22.sp
+                                ),
+                                color = NumeriqGreenDarkText
+                            )
+                            Spacer(modifier = Modifier.height(3.dp))
+                            Text(
+                                text = "Remaining",
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                ),
+                                color = TextDark
+                            )
+                        }
+                    }
+
+                    // Box 3: Currently Selected Model
+                    Surface(
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(18.dp),
+                        color = NumeriqGreenBoxBg,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, NumeriqBrandGreen)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(vertical = 16.dp, horizontal = 8.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = currentMode.title.replace("Tutor ", ""),
+                                style = MaterialTheme.typography.titleLarge.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 20.sp
                                 ),
                                 color = NumeriqGreenDarkText,
-                                maxLines = 1
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Spacer(modifier = Modifier.height(3.dp))
+                            Text(
+                                text = "Active Model",
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                ),
+                                color = TextDark
                             )
                         }
                     }
                 }
             }
 
-            // 3. AI TUTOR SELECTION CARD
+            // 3. AI TUTOR PREFERENCES WITH PRO 5 FREE TRIALS, MAX 0 FREE TRIALS, AND EQUAL SPACING
             item {
                 Text(
                     text = "AI TUTOR PREFERENCES",
@@ -326,14 +323,14 @@ fun SettingsScreen(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clip(RoundedCornerShape(12.dp))
+                                    .clip(RoundedCornerShape(14.dp))
                                     .clickable { viewModel.setTutorMode(mode) }
-                                    .padding(vertical = 10.dp, horizontal = 6.dp),
+                                    .padding(vertical = 12.dp, horizontal = 8.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(36.dp)
+                                        .size(38.dp)
                                         .background(
                                             if (isSelected) NumeriqBrandGreen else LightGraySurface,
                                             CircleShape
@@ -344,25 +341,65 @@ fun SettingsScreen(
                                         imageVector = when (mode) {
                                             TutorMode.TUTOR_AI -> Icons.Outlined.School
                                             TutorMode.TUTOR_AI_PRO -> Icons.Outlined.Psychology
-                                            TutorMode.TUTOR_AI_MAX -> Icons.Outlined.AutoAwesome
+                                            TutorMode.TUTOR_AI_MAX -> Icons.Outlined.Star
                                         },
                                         contentDescription = null,
                                         tint = TextDark,
-                                        modifier = Modifier.size(18.dp)
+                                        modifier = Modifier.size(19.dp)
                                     )
                                 }
 
-                                Spacer(modifier = Modifier.width(12.dp))
+                                Spacer(modifier = Modifier.width(14.dp))
 
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = mode.title,
-                                        style = MaterialTheme.typography.bodyMedium.copy(
-                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                            fontSize = 14.sp
-                                        ),
-                                        color = TextDark
-                                    )
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            text = if (mode == TutorMode.TUTOR_AI) "Tutor AI (Basic)" else mode.title,
+                                            style = MaterialTheme.typography.bodyMedium.copy(
+                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
+                                                fontSize = 14.sp
+                                            ),
+                                            color = TextDark
+                                        )
+
+                                        // Badge for Free Trials
+                                        if (mode == TutorMode.TUTOR_AI_PRO) {
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Surface(
+                                                shape = RoundedCornerShape(8.dp),
+                                                color = NumeriqGreenBoxBg
+                                            ) {
+                                                Text(
+                                                    text = "5 free trials",
+                                                    style = MaterialTheme.typography.labelSmall.copy(
+                                                        fontWeight = FontWeight.Bold,
+                                                        fontSize = 10.sp
+                                                    ),
+                                                    color = NumeriqGreenDarkText,
+                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                )
+                                            }
+                                        } else if (mode == TutorMode.TUTOR_AI_MAX) {
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Surface(
+                                                shape = RoundedCornerShape(8.dp),
+                                                color = LightGraySurface
+                                            ) {
+                                                Text(
+                                                    text = "0 free trials",
+                                                    style = MaterialTheme.typography.labelSmall.copy(
+                                                        fontWeight = FontWeight.Medium,
+                                                        fontSize = 10.sp
+                                                    ),
+                                                    color = TextMuted,
+                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+
+                                    Spacer(modifier = Modifier.height(2.dp))
+
                                     Text(
                                         text = mode.subtitle,
                                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
@@ -386,7 +423,7 @@ fun SettingsScreen(
                                         .fillMaxWidth()
                                         .height(1.dp)
                                         .background(LightGrayBorder)
-                                        .padding(horizontal = 6.dp)
+                                        .padding(horizontal = 8.dp)
                                 )
                             }
                         }
@@ -394,7 +431,7 @@ fun SettingsScreen(
                 }
             }
 
-            // 4. STUDY CONFIGURATION (Show formulas, etc.)
+            // 4. SHOW FORMULAS: CLEAN TWO-COLUMN ROW WITH WEIGHT, TEXT NEVER GOES UNDER TOGGLE SWITCH
             item {
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
@@ -405,40 +442,46 @@ fun SettingsScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                            .padding(horizontal = 16.dp, vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .background(LightGraySurface, CircleShape),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Functions,
-                                    contentDescription = null,
-                                    tint = TextDark,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column {
-                                Text(
-                                    text = "Show Formulas & Identities",
-                                    style = MaterialTheme.typography.bodyMedium.copy(
-                                        fontWeight = FontWeight.SemiBold,
-                                        fontSize = 14.sp
-                                    ),
-                                    color = TextDark
-                                )
-                                Text(
-                                    text = "Highlight theorems and key concepts",
-                                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                                    color = TextMuted
-                                )
-                            }
+                        Box(
+                            modifier = Modifier
+                                .size(38.dp)
+                                .background(NumeriqGreenBoxBg, CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Functions,
+                                contentDescription = null,
+                                tint = NumeriqGreenDarkText,
+                                modifier = Modifier.size(19.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(14.dp))
+
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(end = 12.dp)
+                        ) {
+                            Text(
+                                text = "Show Formulas & Identities",
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 14.sp
+                                ),
+                                color = TextDark
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "Highlight theorems and key concepts",
+                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                                color = TextMuted,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
                         }
 
                         Switch(
@@ -455,7 +498,7 @@ fun SettingsScreen(
                 }
             }
 
-            // 5. DATA & STORAGE MANAGEMENT
+            // 5. DATA MANAGEMENT WITH EQUAL UNIFORM SPACING
             item {
                 Text(
                     text = "DATA MANAGEMENT",
@@ -474,7 +517,7 @@ fun SettingsScreen(
                     color = AppWhite,
                     border = androidx.compose.foundation.BorderStroke(1.dp, LightGrayBorder)
                 ) {
-                    Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)) {
+                    Column(modifier = Modifier.padding(14.dp)) {
                         SettingsRow(
                             icon = Icons.Outlined.DeleteOutline,
                             title = "Clear Solved History",
@@ -506,7 +549,7 @@ fun SettingsScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 12.dp),
+                        .padding(vertical = 10.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
@@ -645,7 +688,7 @@ private fun SettingsRow(
     ) {
         Box(
             modifier = Modifier
-                .size(36.dp)
+                .size(38.dp)
                 .background(
                     if (isDestructive) Color(0xFFFEE2E2) else LightGraySurface,
                     CircleShape
@@ -656,7 +699,7 @@ private fun SettingsRow(
                 imageVector = icon,
                 contentDescription = null,
                 tint = if (isDestructive) Color(0xFFDC2626) else TextDark,
-                modifier = Modifier.size(18.dp)
+                modifier = Modifier.size(19.dp)
             )
         }
 
@@ -671,6 +714,7 @@ private fun SettingsRow(
                 ),
                 color = if (isDestructive) Color(0xFFDC2626) else TextDark
             )
+            Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = subtitle,
                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),

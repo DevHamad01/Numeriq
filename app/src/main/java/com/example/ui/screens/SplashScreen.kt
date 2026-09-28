@@ -1,16 +1,15 @@
 package com.example.ui.screens
 
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,21 +18,16 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -41,7 +35,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -49,7 +45,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
@@ -57,18 +52,13 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.R
 import com.example.ui.theme.AppWhite
-import com.example.ui.theme.BorderLight
 import com.example.ui.theme.LightGrayBorder
 import com.example.ui.theme.LightGraySurface
 import com.example.ui.theme.NumeriqBrandGreen
@@ -76,7 +66,7 @@ import com.example.ui.theme.NumeriqGreenBorder
 import com.example.ui.theme.NumeriqLogoFont
 import com.example.ui.theme.TextDark
 import com.example.ui.theme.TextMuted
-import kotlin.math.roundToInt
+import kotlinx.coroutines.delay
 
 @Composable
 fun SplashScreen(
@@ -87,17 +77,23 @@ fun SplashScreen(
     var showSignInDialog by remember { mutableStateOf(false) }
     var inputName by remember { mutableStateOf("") }
 
-    // Smooth continuous right-to-left slide animation for carousel
-    val infiniteTransition = rememberInfiniteTransition(label = "carouselScroll")
-    val slideAnim by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = -300f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 8000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "slideX"
-    )
+    // Fast flick image cycle state (swaps in milliseconds, cards stay in place)
+    var cycleIndex by remember { mutableIntStateOf(0) }
+
+    val images = remember {
+        listOf(
+            R.drawable.student_left_1790619279252,
+            R.drawable.student_center_1790619296314,
+            R.drawable.student_right_1790619314567
+        )
+    }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(3200) // Stay stable in place
+            cycleIndex = (cycleIndex + 1) % 3 // Fast millisecond flick transition
+        }
+    }
 
     Box(
         modifier = modifier
@@ -129,116 +125,154 @@ fun SplashScreen(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // 2. CENTER CAROUSEL + CONNECTING ARC LINES + STAR BADGE
-            // Height constrained container
+            // 2. CENTER: 3 STATIONARY CARDS + CONNECTING ARCS INTO STAR CENTER + HUGEICONS SPARKLE
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(260.dp),
                 contentAlignment = Alignment.TopCenter
             ) {
-                // Arc lines drawn from bottom center of left and right cards to mid left/right of center star
+                // Arc lines drawn from bottom center of Left & Right cards directly into the CENTER of the Star Box
                 Canvas(
                     modifier = Modifier.fillMaxSize()
                 ) {
                     val w = size.width
                     val h = size.height
 
-                    // Left card bottom mid: left card is centered around ~w * 0.20f, card height 146dp
-                    val leftCardBottomMidX = w * 0.20f
-                    val leftCardBottomMidY = 146.dp.toPx()
+                    // Left card: centered at w * 0.19f, bottom is at 148.dp
+                    val leftCardBottomMidX = w * 0.19f
+                    val leftCardBottomMidY = 148.dp.toPx()
 
-                    // Right card bottom mid: right card is centered around ~w * 0.80f, card height 146dp
-                    val rightCardBottomMidX = w * 0.80f
-                    val rightCardBottomMidY = 146.dp.toPx()
+                    // Right card: centered at w * 0.81f, bottom is at 148.dp
+                    val rightCardBottomMidX = w * 0.81f
+                    val rightCardBottomMidY = 148.dp.toPx()
 
-                    // Center star box: centered at w / 2, y = 205.dp (bottom ~235dp), size = 52dp
-                    val starCenterY = 210.dp.toPx()
-                    val starHalfWidth = 26.dp.toPx()
-                    val starLeftMidX = (w / 2f) - starHalfWidth
-                    val starRightMidX = (w / 2f) + starHalfWidth
+                    // Star Box Center: exactly at center of bottom 52.dp box (box y: h - 52.dp to h)
+                    val starCenterX = w / 2f
+                    val starCenterY = h - 26.dp.toPx()
 
                     val lineColor = Color(0xFFC7D3C5)
                     val stroke = Stroke(width = 2.2f.dp.toPx(), cap = StrokeCap.Round)
 
-                    // Arc from Left Image bottom mid to Star left mid
+                    // Arc from Left card bottom mid directly into star box center
                     val leftArc = Path().apply {
                         moveTo(leftCardBottomMidX, leftCardBottomMidY)
-                        // Smooth downward arc curving rightward into star left
                         cubicTo(
-                            leftCardBottomMidX, leftCardBottomMidY + 36.dp.toPx(),
-                            starLeftMidX - 25.dp.toPx(), starCenterY,
-                            starLeftMidX, starCenterY
+                            leftCardBottomMidX, leftCardBottomMidY + 45.dp.toPx(),
+                            starCenterX - 30.dp.toPx(), starCenterY,
+                            starCenterX, starCenterY
                         )
                     }
                     drawPath(leftArc, color = lineColor, style = stroke)
 
-                    // Arc from Right Image bottom mid to Star right mid
+                    // Arc from Right card bottom mid directly into star box center
                     val rightArc = Path().apply {
                         moveTo(rightCardBottomMidX, rightCardBottomMidY)
-                        // Smooth downward arc curving leftward into star right
                         cubicTo(
-                            rightCardBottomMidX, rightCardBottomMidY + 36.dp.toPx(),
-                            starRightMidX + 25.dp.toPx(), starCenterY,
-                            starRightMidX, starCenterY
+                            rightCardBottomMidX, rightCardBottomMidY + 45.dp.toPx(),
+                            starCenterX + 30.dp.toPx(), starCenterY,
+                            starCenterX, starCenterY
                         )
                     }
                     drawPath(rightArc, color = lineColor, style = stroke)
                 }
 
-                // 3 Separate Images arranged in Carousel sliding right to left
-                Box(
+                // 3 Separate Images staying in their 3 positions (Left, Center, Right) and flick-cycling photos in ms
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(176.dp)
-                        .clip(RoundedCornerShape(26.dp)),
-                    contentAlignment = Alignment.Center
+                        .padding(horizontal = 6.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Sliding row with infinite smooth shift right to left
-                    Row(
+                    // Left Slot (Stationary card, fast millisecond photo flick)
+                    Surface(
                         modifier = Modifier
-                            .offset { IntOffset(x = slideAnim.roundToInt(), y = 0) }
-                            .padding(horizontal = 4.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                            .weight(1f)
+                            .height(148.dp)
+                            .clip(RoundedCornerShape(22.dp)),
+                        shape = RoundedCornerShape(22.dp),
+                        color = Color.White,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, LightGrayBorder)
                     ) {
-                        // Render looping sequence so cards smoothly slide right to left
-                        val imageList = listOf(
-                            R.drawable.student_left_1790619279252,
-                            R.drawable.student_center_1790619296314,
-                            R.drawable.student_right_1790619314567,
-                            R.drawable.student_left_1790619279252,
-                            R.drawable.student_center_1790619296314,
-                            R.drawable.student_right_1790619314567
-                        )
+                        AnimatedContent(
+                            targetState = images[cycleIndex % 3],
+                            transitionSpec = {
+                                (fadeIn(animationSpec = tween(220, easing = FastOutSlowInEasing)))
+                                    .togetherWith(fadeOut(animationSpec = tween(220, easing = FastOutSlowInEasing)))
+                            },
+                            label = "leftCardFlick"
+                        ) { targetImg ->
+                            Image(
+                                painter = painterResource(id = targetImg),
+                                contentDescription = "Student Left",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                    }
 
-                        imageList.forEachIndexed { index, resId ->
-                            val isProminent = (index % 3) == 1
-                            Surface(
-                                modifier = Modifier
-                                    .width(if (isProminent) 130.dp else 112.dp)
-                                    .height(if (isProminent) 170.dp else 146.dp)
-                                    .clip(RoundedCornerShape(22.dp)),
-                                shape = RoundedCornerShape(22.dp),
-                                color = Color.White,
-                                border = androidx.compose.foundation.BorderStroke(
-                                    width = if (isProminent) 2.dp else 1.dp,
-                                    color = if (isProminent) NumeriqBrandGreen else LightGrayBorder
-                                ),
-                                shadowElevation = if (isProminent) 6.dp else 1.dp
-                            ) {
-                                Image(
-                                    painter = painterResource(id = resId),
-                                    contentDescription = "Student $index",
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier.fillMaxSize()
-                                )
-                            }
+                    Spacer(modifier = Modifier.width(10.dp))
+
+                    // Center Slot (Stationary prominent card, fast millisecond photo flick)
+                    Surface(
+                        modifier = Modifier
+                            .weight(1.22f)
+                            .height(176.dp)
+                            .shadow(8.dp, RoundedCornerShape(26.dp), spotColor = Color(0x33000000))
+                            .clip(RoundedCornerShape(26.dp)),
+                        shape = RoundedCornerShape(26.dp),
+                        color = Color.White,
+                        border = androidx.compose.foundation.BorderStroke(2.dp, NumeriqGreenBorder)
+                    ) {
+                        AnimatedContent(
+                            targetState = images[(cycleIndex + 1) % 3],
+                            transitionSpec = {
+                                (fadeIn(animationSpec = tween(220, easing = FastOutSlowInEasing)))
+                                    .togetherWith(fadeOut(animationSpec = tween(220, easing = FastOutSlowInEasing)))
+                            },
+                            label = "centerCardFlick"
+                        ) { targetImg ->
+                            Image(
+                                painter = painterResource(id = targetImg),
+                                contentDescription = "Student Center",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.width(10.dp))
+
+                    // Right Slot (Stationary card, fast millisecond photo flick)
+                    Surface(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(148.dp)
+                            .clip(RoundedCornerShape(22.dp)),
+                        shape = RoundedCornerShape(22.dp),
+                        color = Color.White,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, LightGrayBorder)
+                    ) {
+                        AnimatedContent(
+                            targetState = images[(cycleIndex + 2) % 3],
+                            transitionSpec = {
+                                (fadeIn(animationSpec = tween(220, easing = FastOutSlowInEasing)))
+                                    .togetherWith(fadeOut(animationSpec = tween(220, easing = FastOutSlowInEasing)))
+                            },
+                            label = "rightCardFlick"
+                        ) { targetImg ->
+                            Image(
+                                painter = painterResource(id = targetImg),
+                                contentDescription = "Student Right",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
                         }
                     }
                 }
 
-                // Green Box with Star/Sparkle at bottom center (where arcs meet from left & right)
+                // Green Box with Hugeicons AI Sparkle at bottom center (where arcs meet in the center)
                 Box(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
@@ -250,11 +284,10 @@ fun SplashScreen(
                         .border(3.dp, AppWhite, RoundedCornerShape(18.dp)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Outlined.AutoAwesome,
-                        contentDescription = "Star Sparkle",
-                        tint = TextDark,
-                        modifier = Modifier.size(24.dp)
+                    // Hugeicons-style 4-point AI magic sparkle
+                    HugeiconsSparkleIcon(
+                        modifier = Modifier.size(24.dp),
+                        tint = TextDark
                     )
                 }
             }
@@ -290,7 +323,7 @@ fun SplashScreen(
                             fontWeight = FontWeight.Medium,
                             fontSize = 24.sp
                         ),
-                        color = Color(0xFF9CA3AF), // light gray as requested
+                        color = Color(0xFF9CA3AF),
                         modifier = Modifier.padding(bottom = 2.dp)
                     )
                 }
@@ -307,7 +340,7 @@ fun SplashScreen(
                             fontWeight = FontWeight.Medium,
                             fontSize = 24.sp
                         ),
-                        color = Color(0xFF9CA3AF), // light gray as requested
+                        color = Color(0xFF9CA3AF),
                         modifier = Modifier.padding(bottom = 2.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
@@ -478,5 +511,58 @@ fun SplashScreen(
                 }
             }
         }
+    }
+}
+
+/**
+ * Hugeicons-style 4-point AI magic sparkle:
+ * Precision concave curved star with clean modern geometry and companion sparkle
+ */
+@Composable
+fun HugeiconsSparkleIcon(
+    modifier: Modifier = Modifier,
+    tint: Color = TextDark
+) {
+    Canvas(modifier = modifier) {
+        val w = size.width
+        val h = size.height
+
+        // Main 4-point sparkle centered slightly left-bottom
+        val cx = w * 0.44f
+        val cy = h * 0.54f
+        val r = w * 0.38f
+        val inner = r * 0.22f
+
+        val mainSparkle = Path().apply {
+            moveTo(cx, cy - r)
+            quadraticTo(cx, cy, cx + inner, cy - inner)
+            lineTo(cx + r, cy)
+            quadraticTo(cx, cy, cx + inner, cy + inner)
+            lineTo(cx, cy + r)
+            quadraticTo(cx, cy, cx - inner, cy + inner)
+            lineTo(cx - r, cy)
+            quadraticTo(cx, cy, cx - inner, cy - inner)
+            close()
+        }
+        drawPath(mainSparkle, color = tint)
+
+        // Small companion sparkle at top-right
+        val cx2 = w * 0.80f
+        val cy2 = h * 0.24f
+        val r2 = w * 0.16f
+        val inner2 = r2 * 0.24f
+
+        val companionSparkle = Path().apply {
+            moveTo(cx2, cy2 - r2)
+            quadraticTo(cx2, cy2, cx2 + inner2, cy2 - inner2)
+            lineTo(cx2 + r2, cy2)
+            quadraticTo(cx2, cy2, cx2 + inner2, cy2 + inner2)
+            lineTo(cx2, cy2 + r2)
+            quadraticTo(cx2, cy2, cx2 - inner2, cy2 + inner2)
+            lineTo(cx2 - r2, cy2)
+            quadraticTo(cx2, cy2, cx2 - inner2, cy2 - inner2)
+            close()
+        }
+        drawPath(companionSparkle, color = tint)
     }
 }

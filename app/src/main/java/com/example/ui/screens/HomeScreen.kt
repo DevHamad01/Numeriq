@@ -109,29 +109,15 @@ fun HomeScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Avatar + "Hello, {name}!" (clean, no click action, no modal)
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.user_avatar_1790595505701),
-                            contentDescription = "User profile",
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .border(1.5.dp, Color(0xFFE5E7EB), CircleShape)
-                        )
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Text(
-                            text = "Hello, $userName!",
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 16.sp
-                            ),
-                            color = TextDark
-                        )
-                    }
+                    // "Hello, {name}!" (clean without user photo, no click action, no modal)
+                    Text(
+                        text = "Hello, $userName!",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp
+                        ),
+                        color = TextDark
+                    )
 
                     // Green circle with black outlined star (not filled)
                     Surface(
