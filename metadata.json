@@ -1,0 +1,7 @@
+{
+  "name": "Numeriq",
+  "description": "Personal AI Math Study Companion with step-by-step solutions, photo scanning, multiple tutor modes, and history.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
